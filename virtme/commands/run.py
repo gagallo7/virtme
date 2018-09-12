@@ -99,6 +99,8 @@ def make_parser():
     g = parser.add_argument_group(title='Guest userspace configuration')
     g.add_argument('--pwd', action='store_true',
                    help='Propagate current working directory to the guest')
+    g.add_argument('--cwd', action='store',
+                   help='Change guest working directory')
 
     g = parser.add_argument_group(title='Sharing resources with guest')
     g.add_argument('--rwdir', action='append', default=[],
@@ -378,6 +380,13 @@ def main():
         rel_pwd = os.path.relpath(os.getcwd(), args.root)
         if rel_pwd.startswith('..'):
             print('current working directory is not contained in the root')
+            return 1
+        kernelargs.append('virtme_chdir=%s' % rel_pwd)
+
+    if args.cwd:
+        rel_pwd = os.path.relpath(args.cwd, args.root)
+        if rel_pwd.startswith('..'):
+            print('specified working directory is not contained in the root')
             return 1
         kernelargs.append('virtme_chdir=%s' % rel_pwd)
 
