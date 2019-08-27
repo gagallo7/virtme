@@ -67,6 +67,8 @@ def make_parser():
                    help='Set guest memory and qemu -m flag.')
     g.add_argument('--name', action='store', default=None,
                    help='Set guest hostname and qemu -name flag.')
+    g.add_argument('--home', action='store',
+                   help='Set guest root home directory.')
 
     g = parser.add_argument_group(
         title='Scripting',
@@ -228,11 +230,15 @@ def main():
         initcmds.append('mkdir -p /run/virtme/user')
         initcmds.append('/bin/mount -n -t 9p -o ro,version=9p2000.L,trans=virtio,access=any virtme.userscriptdir /run/virtme/user')
 
-    initcmds.append('exec /run/virtme/guesttools/virtme-init')
+    initcmds.append(f'exec /run/virtme/guesttools/virtme-init {args.home}')
 
     # Map modules
     if moddir is not None:
         export_virtfs(qemu, arch, qemuargs, moddir, 'virtme.moddir')
+
+    if args.home is not None:
+        if args.home not in args.rwdir:
+            args.rwdir.append(args.home)
 
     # Set up mounts
     mount_index = 0

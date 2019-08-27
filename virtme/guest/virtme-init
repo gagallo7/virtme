@@ -221,8 +221,13 @@ for p in "${!virtme_@}"; do export -n "$p"; done
 echo "virtme-init: console is $consdev"
 
 # Set up a basic environment
-install -d -m 0755 /tmp/roothome
-export HOME=/tmp/roothome
+if [[ ! -d "$1" ]]
+then
+    install -d -m 0755 /tmp/roothome
+    export HOME=/tmp/roothome
+else
+    export HOME="$1"
+fi
 
 if [[ -d /run/virtme/user ]]; then
     for s in /run/virtme/user/*.sh; do
@@ -242,7 +247,7 @@ while true; do
 	stty ${virtme_stty_con} <"/dev/$consdev"
     fi
 
-    setsid bash 0<>"/dev/$consdev" 1>&0 2>&0
+    setsid bash --login 0<>"/dev/$consdev" 1>&0 2>&0
     echo "Shell died.  Will respawn."
     sleep 0.5
 done
