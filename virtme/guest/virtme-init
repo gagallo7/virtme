@@ -247,7 +247,7 @@ while true; do
 	stty ${virtme_stty_con} <"/dev/$consdev"
     fi
 
-    setsid bash 0<>"/dev/$consdev" 1>&0 2>&0
+    setsid bash -l 0<>"/dev/$consdev" 1>&0 2>&0
     echo "Shell died.  Will respawn."
     sleep 0.5
 done
