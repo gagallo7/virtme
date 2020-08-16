@@ -5,7 +5,7 @@
 # as a file called LICENSE with SHA-256 hash:
 # 8177f97513213526df2cf6184d8ff986c675afb514d4e68a404010521b880643
 
-export PATH=/bin:/sbin:/usr/bin:/usr/sbin
+export PATH=/usr/local/bin:/bin:/sbin:/usr/bin:/usr/sbin
 
 log() {
     if [[ -e /dev/kmsg ]]; then
@@ -133,6 +133,12 @@ if mount -t tmpfs tmpfs /sys/fs/cgroup &>/dev/null; then
     mount -t cgroup2 cgroup2 /sys/fs/cgroup/unified
 fi
 
+# Set up cgroup mount points (mount cgroupv2 hierarchy by default)
+if mount -t tmpfs tmpfs /sys/fs/cgroup &>/dev/null; then
+    mkdir /sys/fs/cgroup/unified
+    mount -t cgroup2 cgroup2 /sys/fs/cgroup/unified
+fi
+
 # Set up filesystems that live in /dev
 mkdir -p -m 0755 /dev/shm /dev/pts
 mount -t devpts -o gid=tty,mode=620,noexec,nosuid devpts /dev/pts
@@ -223,8 +229,19 @@ for p in "${!virtme_@}"; do export -n "$p"; done
 echo "virtme-init: console is $consdev"
 
 # Set up a basic environment
-install -d -m 0755 /tmp/roothome
-export HOME=/tmp/roothome
+if [[ ! -d "$1" ]]
+then
+    install -d -m 0755 /tmp/roothome
+    export HOME=/tmp/roothome
+else
+    export HOME="$1"
+fi
+
+if [[ -d /run/virtme/user ]]; then
+    for s in /run/virtme/user/*.sh; do
+        setsid $s 0<>"/dev/$consdev" 1>&0 2>&0
+    done
+fi
 
 # Bring up a functioning shell on the console.  This is a bit magical:
 # We have no controlling terminal because we're attached to a fake
@@ -238,7 +255,7 @@ while true; do
 	stty ${virtme_stty_con} <"/dev/$consdev"
     fi
 
-    setsid bash 0<>"/dev/$consdev" 1>&0 2>&0
+    setsid bash -l 0<>"/dev/$consdev" 1>&0 2>&0
     echo "Shell died.  Will respawn."
     sleep 0.5
 done
